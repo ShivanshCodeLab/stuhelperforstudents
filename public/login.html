@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1748a4">
+  <title>Sign In & Register · StuHelper</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body { background: linear-gradient(135deg, #f0f4ff 0%, #f8f9ff 50%, #eef2ff 100%); min-height: 100vh; display: flex; flex-direction: column; }
+    .auth-topbar { max-width: 1080px; width: 100%; margin: 0 auto; padding: 20px 24px 8px; display: flex; justify-content: space-between; align-items: center; }
+    .auth-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+    .auth-brand img { height: 52px; width: auto; display: block; object-fit: contain; }
+    .auth-shell { max-width: 1080px; width: 100%; margin: 12px auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: stretch; }
+    .auth-showcase { background: linear-gradient(145deg, #0f2c6b 0%, #1754bd 58%, #3b76db 100%); color: #fff; border-radius: 26px; padding: 36px 34px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 22px 48px rgba(23,72,164,.22); position: relative; overflow: hidden; }
+    .auth-showcase::before { content: ""; position: absolute; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.14) 0%, transparent 70%); top: -110px; right: -90px; pointer-events: none; }
+    .auth-showcase .eyebrow { color: #bcd2ff; letter-spacing: .16em; font-size: 10.5px; font-weight: 800; }
+    .auth-showcase h1 { font: 800 31px/1.18 Manrope, sans-serif; margin: 12px 0 10px; letter-spacing: -.03em; }
+    .auth-showcase p { color: #dce8ff; font-size: 13.5px; line-height: 1.6; margin: 0 0 22px; }
+    .workspace-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+    .wp-card { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 14px; backdrop-filter: blur(6px); }
+    .wp-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .wp-icon { width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,.2); display: grid; place-items: center; font-size: 16px; }
+    .wp-pill { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(16,185,129,.25); color: #a7f3d0; }
+    .wp-card strong { display: block; font-size: 13px; color: #fff; margin-bottom: 2px; }
+    .wp-card small { font-size: 11px; color: #d5e4ff; line-height: 1.4; display: block; }
+    .wp-banner { background: rgba(10, 26, 66, .35); border: 1px solid rgba(255,255,255,.16); border-radius: 15px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .wp-banner strong { display: block; font-size: 12.5px; color: #fff; }
+    .wp-banner span { font-size: 11px; color: #bcd2ff; }
+    .auth-card { background: #fff; border: 1px solid #e5ebf5; border-radius: 26px; padding: 32px 30px; box-shadow: 0 18px 42px rgba(28,51,91,.08); }
+    .role-switch { display: grid; grid-template-columns: 1fr 1fr; background: #f1f4fb; padding: 5px; border-radius: 13px; margin-bottom: 18px; }
+    .role-btn { border: 0; background: transparent; padding: 10px; border-radius: 10px; font: 700 13px Manrope, sans-serif; color: #64718a; transition: .2s; cursor: pointer; }
+    .role-btn.active { background: #fff; color: #1748a4; box-shadow: 0 4px 12px rgba(23,72,164,.1); }
+    .sub-tabs { display: flex; gap: 18px; border-bottom: 1px solid #e9ecf4; margin-bottom: 20px; }
+    .sub-tab { border: 0; background: transparent; padding: 0 2px 10px; font: 700 13px Manrope, sans-serif; color: #81879d; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+    .sub-tab.active { color: #1748a4; border-bottom-color: #1748a4; }
+    .auth-form { display: grid; gap: 13px; }
+    .auth-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .auth-field { display: grid; gap: 5px; }
+    .auth-field label { font-size: 11.5px; font-weight: 700; color: #34435d; }
+    .phone-wrap { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); overflow: hidden; }
+    .phone-wrap span { padding: 0 11px; font-weight: 700; font-size: 13px; color: #1748a4; background: #eaf1ff; height: 44px; display: grid; place-items: center; border-right: 1px solid var(--line); }
+    .phone-wrap input { border: 0; background: transparent; padding: 10px 12px; width: 100%; outline: none; font-size: 13px; color: var(--ink); }
+    .pw-wrap { position: relative; display: flex; align-items: center; }
+    .pw-wrap input { width: 100%; padding-right: 42px; }
+    .pw-eye { position: absolute; right: 10px; background: transparent; border: 0; cursor: pointer; font-size: 16px; line-height: 1; padding: 4px; color: #475569; }
+    .auth-msg { padding: 11px 13px; border-radius: 11px; font-size: 12.5px; font-weight: 600; display: none; margin-bottom: 12px; }
+    .auth-msg.error { display: block; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .auth-msg.success { display: block; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .auth-msg.info { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .panel-title { margin: 0 0 6px; font: 800 19px Manrope, sans-serif; }
+    .panel-sub { margin: 0 0 16px; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+    .back-link { display: block; text-align: center; font-size: 12px; color: #1748a4; font-weight: 700; margin-top: 10px; }
+    .big-icon { font-size: 40px; margin-bottom: 6px; }
+    .btn[disabled] { opacity: .7; cursor: progress; }
+    .btn .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: shspin .7s linear infinite; vertical-align: -2px; margin-right: 7px; }
+    @keyframes shspin { to { transform: rotate(360deg); } }
+    .auth-card.busy { pointer-events: none; }
+    @media (max-width: 860px) { .auth-shell { grid-template-columns: 1fr; } .auth-showcase { padding: 26px; } }
+    @media (max-width: 500px) { .auth-row, .workspace-preview-grid { grid-template-columns: 1fr; } .auth-card { padding: 22px 18px; } }
+  </style>
+</head>
+<body>
+  <header class="auth-topbar">
+    <a class="auth-brand" href="login.html" aria-label="StuHelper Student Workspace">
+      <img src="assets/images/stuhelper-logo.png" alt="StuHelper — Study Smart. Achieve More.">
+    </a>
+  </header>
+
+  <main class="auth-shell">
+    <section class="auth-showcase">
+      <div>
+        <span class="eyebrow">STUHELPER STUDENT WORKSPACE</span>
+        <h1>Everything you need to study smarter.</h1>
+        <p>Plan your semester syllabus, manage assignment deadlines, merge or edit PDFs locally, and stay focused with built-in study tools.</p>
+
+        <div class="workspace-preview-grid">
+          <div class="wp-card">
+            <div class="wp-card-head">
+              <div class="wp-icon">☷</div>
+              <span class="wp-pill">Live Tracker</span>
+            </div>
+            <strong>Syllabus & Subjects</strong>
+            <small>Chapter-wise progress tracking across all 8 semesters.</small>
+          </div>
+          <div class="wp-card">
+            <div class="wp-card-head">
+              <div class="wp-icon">✓</div>
+              <span class="wp-pill">Deadlines</span>
+            </div>
+            <strong>Assignments & Tasks</strong>
+            <small>Never miss practical files, submissions, or exam dates.</small>
+          </div>
+          <div class="wp-card">
+            <div class="wp-card-head">
+              <div class="wp-icon">▤</div>
+              <span class="wp-pill">100% Offline</span>
+            </div>
+            <strong>PDF & Image Studio</strong>
+            <small>Merge PDFs, convert DOCX/Images, and resize photos fast.</small>
+          </div>
+          <div class="wp-card">
+            <div class="wp-card-head">
+              <div class="wp-icon">◷</div>
+              <span class="wp-pill">Pomodoro</span>
+            </div>
+            <strong>Focus Timer & Notes</strong>
+            <small>Deep-work timer with ambient sound & rich study notes.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="wp-banner">
+        <div>
+          <strong>Unique Student ID & Contact</strong>
+          <span>Each email & phone number is strictly bound to one account.</span>
+        </div>
+        <span style="font-size:20px;">🛡️</span>
+      </div>
+    </section>
+
+    <section class="auth-card">
+      <div class="role-switch" role="tablist">
+        <button type="button" class="role-btn active" id="roleStudentBtn">🎓 Student Portal</button>
+        <button type="button" class="role-btn" id="roleAdminBtn">🛡️ Admin Login</button>
+      </div>
+
+      <div id="authAlert" class="auth-msg" role="alert"></div>
+
+      <!-- STUDENT PANEL -->
+      <div id="studentPortal">
+        <div class="sub-tabs" id="studentSubTabs">
+          <button type="button" class="sub-tab active" id="tabLogin">Student Login</button>
+          <button type="button" class="sub-tab" id="tabRegister">New Student Register</button>
+        </div>
+
+        <!-- Student Login Form -->
+        <form id="studentLoginForm" class="auth-form">
+          <div class="auth-field">
+            <label for="stuLoginId">Registered Email</label>
+            <input class="field" id="stuLoginId" type="email" required autocomplete="email" placeholder="student@college.edu">
+          </div>
+          <div class="auth-field">
+            <label for="stuLoginPass">Password</label>
+            <div class="pw-wrap"><input class="field" id="stuLoginPass" type="password" required autocomplete="current-password" placeholder="Password"><button type="button" class="pw-eye" data-target="stuLoginPass" aria-label="Toggle password visibility">👁️</button></div>
+          </div>
+          <div style="text-align:right;margin-top:-4px;"><a href="#" class="forgot-link" style="font-size:12px;color:#1748a4;font-weight:700;">Forgot password?</a></div>
+          <button class="btn" type="submit" style="width:100%;margin-top:4px;">Sign In to Workspace →</button>
+          <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:4px;">
+            New student? <a href="#" id="switchToRegLink" style="color:#1748a4;font-weight:700;">Create Student Account</a>
+          </div>
+        </form>
+
+        <!-- Student Registration Form -->
+        <form id="studentRegisterForm" class="auth-form hidden">
+          <div class="auth-row">
+            <div class="auth-field">
+              <label for="regName">Full Name *</label>
+              <input class="field" id="regName" type="text" required placeholder="Your Name">
+            </div>
+            <div class="auth-field">
+              <label for="regRoll">Roll Number / Student ID *</label>
+              <input class="field" id="regRoll" type="text" required placeholder="Roll Number">
+            </div>
+          </div>
+          <div class="auth-row">
+            <div class="auth-field">
+              <label for="regCourse">Course / Stream *</label>
+              <input class="field" id="regCourse" type="text" required placeholder="Course / Stream">
+            </div>
+            <div class="auth-field">
+              <label for="regSem">Semester / Year *</label>
+              <select class="field" id="regSem" required>
+                <option value="1st Semester">1st Semester (Year 1)</option>
+                <option value="2nd Semester">2nd Semester (Year 1)</option>
+                <option value="3rd Semester">3rd Semester (Year 2)</option>
+                <option value="4th Semester">4th Semester (Year 2)</option>
+                <option value="5th Semester">5th Semester (Year 3)</option>
+                <option value="6th Semester">6th Semester (Year 3)</option>
+                <option value="7th Semester">7th Semester (Year 4)</option>
+                <option value="8th Semester">8th Semester (Year 4)</option>
+              </select>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="regEmail">Email Address (Unique) *</label>
+            <input class="field" id="regEmail" type="email" required autocomplete="email" placeholder="Your Email">
+          </div>
+          <div class="auth-field">
+            <label for="regPhone">Mobile Number (Unique) *</label>
+            <div class="phone-wrap">
+              <span>+91</span>
+              <input id="regPhone" type="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="Number">
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="regPass">Create Password (min 8 characters) *</label>
+            <div class="pw-wrap"><input class="field" id="regPass" type="password" minlength="8" required autocomplete="new-password" placeholder="Password"><button type="button" class="pw-eye" data-target="regPass" aria-label="Toggle password visibility">👁️</button></div>
+          </div>
+          <button class="btn" type="submit" style="width:100%;margin-top:4px;">Create Account & Enter Workspace →</button>
+        </form>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div id="adminPortal" class="hidden">
+        <div style="margin-bottom:16px;">
+          <h2 style="margin:0 0 4px;font:800 19px Manrope;">Administrator Sign In</h2>
+          <p style="margin:0;font-size:12px;color:var(--muted);">Dedicated Admin Console — library books/PDFs, student requests & analytics.</p>
+        </div>
+        <form id="adminLoginForm" class="auth-form">
+          <div class="auth-field">
+            <label for="adminEmail">Admin Email</label>
+            <input class="field" id="adminEmail" type="email" required placeholder="Enter admin email">
+          </div>
+          <div class="auth-field">
+            <label for="adminPass">Admin Password</label>
+            <div class="pw-wrap"><input class="field" id="adminPass" type="password" required autocomplete="current-password" placeholder="Password"><button type="button" class="pw-eye" data-target="adminPass" aria-label="Toggle password visibility">👁️</button></div>
+          </div>
+          <div style="text-align:right;margin-top:-4px;"><a href="#" class="forgot-link" style="font-size:12px;color:#1748a4;font-weight:700;">Forgot password?</a></div>
+          <button class="btn" type="submit" style="width:100%;margin-top:4px;">Sign In to Admin Console 🛡️</button>
+          <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:4px;">
+            First time here? <a href="#" id="adminSetupLink" style="color:#1748a4;font-weight:700;">Create the admin account</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div id="forgotPanel" class="hidden">
+        <h2 class="panel-title">Reset your password</h2>
+        <p class="panel-sub">Enter your registered email. We'll send you a secure link to set a new password.</p>
+        <form id="forgotForm" class="auth-form">
+          <div class="auth-field"><label for="forgotEmail">Registered Email</label><input class="field" id="forgotEmail" type="email" required autocomplete="email" placeholder="student@college.edu"></div>
+          <button class="btn" type="submit" style="width:100%;">Send reset link</button>
+          <a href="#" class="back-link">← Back to sign in</a>
+        </form>
+      </div>
+
+      <!-- CHECK EMAIL -->
+      <div id="checkEmailPanel" class="hidden" style="text-align:center;">
+        <div class="big-icon">📬</div>
+        <h2 class="panel-title">Check your inbox</h2>
+        <p class="panel-sub" id="checkEmailText">We sent a confirmation link to your email. Open it to activate your account — you'll be signed in automatically.</p>
+        <button class="btn secondary" type="button" id="resendBtn" style="width:100%;">Resend confirmation email</button>
+        <a href="#" class="back-link">← Back to sign in</a>
+      </div>
+
+      <!-- SET NEW PASSWORD (recovery / invite) -->
+      <div id="newPassPanel" class="hidden">
+        <h2 class="panel-title" id="newPassTitle">Set a new password</h2>
+        <p class="panel-sub" id="newPassSub">Choose a strong password with at least 8 characters.</p>
+        <form id="newPassForm" class="auth-form">
+          <div class="auth-field"><label for="newPass">New password</label><div class="pw-wrap"><input class="field" id="newPass" type="password" minlength="8" required autocomplete="new-password" placeholder="New password"><button type="button" class="pw-eye" data-target="newPass" aria-label="Toggle password visibility">👁️</button></div></div>
+          <button class="btn" type="submit" style="width:100%;">Save password & continue →</button>
+        </form>
+      </div>
+
+      <!-- COMPLETE PROFILE -->
+      <div id="profilePanel" class="hidden">
+        <h2 class="panel-title">Complete your student profile</h2>
+        <p class="panel-sub">Just a few details so your workspace, notices and syllabus match your semester.</p>
+        <form id="profileForm" class="auth-form">
+          <div class="auth-row">
+            <div class="auth-field"><label for="pfName">Full Name *</label><input class="field" id="pfName" type="text" required placeholder="Your Name"></div>
+            <div class="auth-field"><label for="pfRoll">Roll Number *</label><input class="field" id="pfRoll" type="text" required placeholder="Roll Number"></div>
+          </div>
+          <div class="auth-row">
+            <div class="auth-field"><label for="pfCourse">Course / Stream *</label><input class="field" id="pfCourse" type="text" required placeholder="Course / Stream"></div>
+            <div class="auth-field"><label for="pfSem">Semester *</label><select class="field" id="pfSem" required></select></div>
+          </div>
+          <div class="auth-field"><label for="pfPhone">Mobile Number (Unique) *</label><div class="phone-wrap"><span>+91</span><input id="pfPhone" type="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="Number"></div></div>
+          <button class="btn" type="submit" style="width:100%;">Save & Enter Workspace →</button>
+          <a href="#" class="back-link" id="profileSignOut">Sign out</a>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/login.js"></script>
+</body>
+</html>

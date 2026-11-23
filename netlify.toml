@@ -1,0 +1,19 @@
+[build]
+  publish = "public"
+  command = ""
+
+[dev]
+  publish = "public"
+
+# Old local-only pages from earlier versions point here.
+[[redirects]]
+  from = "/signin"
+  to = "/login.html"
+  status = 301
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

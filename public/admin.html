@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Console · StuHelper</title><link rel="stylesheet" href="assets/css/style.css">
+<style>
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.gap{display:grid;gap:11px}.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bdg{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#e0e7ff;color:#1d4ed8}.bdg.ok{background:#dcfce7;color:#15803d}.bdg.bad{background:#fee2e2;color:#b91c1c}.bdg.warn{background:#fef3c7;color:#b45309}
+.bar{height:9px;background:var(--surface-2);border-radius:99px;border:1px solid var(--line);overflow:hidden;margin:4px 0 12px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#1748a4,#3b82f6)}
+.toast{position:fixed;right:18px;bottom:18px;padding:11px 16px;border-radius:12px;font:700 13px Manrope,sans-serif;color:#fff;background:#047857;z-index:99;display:none}.toast.err{background:#b91c1c}
+.gate{max-width:380px;margin:12vh auto;padding:0 16px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sm{padding:5px 10px!important;font-size:11px!important}
+/*gate*/.gate .panel{min-width:0;overflow:hidden}.gate .gap{grid-template-columns:minmax(0,1fr)}.gate img{max-width:100%;height:auto;max-height:90px;object-fit:contain;justify-self:start}.gate .field,.gate .btn{width:100%;box-sizing:border-box}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+</style></head><body>
+<div id="gate" class="gate"><div class="panel gap"><img class="brand-logo-image" src="assets/images/stuhelper-logo.png" alt="StuHelper"><h2 style="margin:0">Admin Sign In</h2><p class="muted small" id="gateMsg">Sign in with your administrator account.</p>
+<form id="loginForm" class="gap"><input class="field" id="aEmail" type="email" placeholder="Admin email" autocomplete="email" required><input class="field" id="aPass" type="password" placeholder="Password" autocomplete="current-password" required><button class="btn" type="submit" id="aBtn">Sign in 🛡️</button></form><a class="small" href="login.html?admin=1" style="color:#1748a4;font-weight:700">Forgot password? · Student login</a></div></div>
+<div class="app-container" id="app" style="display:none">
+<aside class="sidebar"><div class="logo"><img class="brand-logo-image" src="assets/images/stuhelper-logo.png" alt="StuHelper Admin"></div>
+<nav id="nav"><p class="nav-label">ADMINISTRATION</p></nav>
+<div class="sidebar-bottom"><a class="nav-item" href="index.html?preview=student"><span class="nav-icon">👁️</span>Student View</a><a class="nav-item" href="#" id="out"><span class="nav-icon">🚪</span>Sign out</a></div></aside>
+<main class="main-content"><header class="topbar"><div><h3>StuHelper Admin Console</h3><p id="who"></p></div><button class="btn secondary" id="refresh">↻ Refresh</button></header><div id="view"></div></main></div>
+<div class="toast" id="toast"></div>
+<script type="module">
+import "./assets/js/auth.js";
+(()=>{
+const A=window.SH_AUTH;
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SEMS=['1st','2nd','3rd','4th','5th','6th','7th','8th'].map(s=>s+' Semester');
+const TABS={dash:'📊 Dashboard',students:'🎓 Students',notices:'📢 Notices & Exam',academics:'🗓️ Assignments & Syllabus',library:'📚 Library',requests:'📥 Requests',audit:'🧾 Audit Log'};
+const D={students:[],notices:[],assignments:[],syllabus:[],library_books:[],book_requests:[],settings:[],audit_log:[]};
+let me='',tab='dash',q='',sem='';
+const toast=(m,e)=>{const t=$('toast');t.textContent=m;t.className='toast'+(e?' err':'');t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)};
+const fld=(n,p,t='text',r=1)=>`<input class="field" name="${n}" type="${t}" placeholder="${p}" ${r?'required':''}>`;
+const sel=(n,o)=>`<select class="field" name="${n}">${o.map(x=>`<option>${x}</option>`).join('')}</select>`;
+const empty=m=>`<div class="empty-state">${m}</div>`;
+const panel=(h,p,b)=>`<div class="panel"><div class="section-heading"><div><h2>${h}</h2><p>${p||''}</p></div></div>${b}</div>`;
+const btn=(a,t,id,x='',cls='secondary')=>`<button class="btn ${cls} sm" data-a="${a}" data-t="${t}" data-id="${id}" ${x}>`;
+const pending=()=>D.book_requests.filter(r=>r.status==='Pending').length;
+const day=d=>new Date(d).toLocaleDateString();
+
+async function load(){try{Object.assign(D,await A.api('/api/admin/data'))}catch(e){if(e.status===401||e.status===403)return location.replace('login.html?admin=1&expired=1');toast(e.message,1)}render()}
+async function act(method,path,body,log){try{await A.api(path,{method,body});toast('✓ '+log);load()}catch(e){toast(e.message,1)}}
+
+const V={
+dash(){const s=D.students,act=s.filter(x=>x.status!=='Suspended').length;
+return `<section class="stats-row">${[['Students',s.length],['Active',act],['Pending requests',pending()],['Live notices',D.notices.filter(n=>n.active).length],['Library items',D.library_books.length]].map(([a,b])=>`<div class="stat-card"><span>${a}</span><strong>${b}</strong></div>`).join('')}</section>
+<div class="g2">${panel('Students by semester','Enrollment',SEMS.map(m=>{const n=s.filter(x=>x.semester===m).length,p=s.length?Math.round(n*100/s.length):0;return `<div class="row" style="justify-content:space-between"><b class="small">${m}</b><span class="small">${n} (${p}%)</span></div><div class="bar"><i style="width:${p}%"></i></div>`}).join(''))}
+${panel('Recent admin activity','Last 8 actions',D.audit_log.slice(0,8).map(l=>`<div class="list-row"><div><strong>${esc(l.action)}</strong><div class="muted small">${esc(l.actor)} · ${new Date(l.created_at).toLocaleString()}</div></div></div>`).join('')||empty('No activity yet.'))}</div>`},
+students(){const L=D.students.filter(s=>(!sem||s.semester===sem)&&(!q||[s.full_name,s.email,s.roll_no,s.course,s.phone].join(' ').toLowerCase().includes(q.toLowerCase())));
+return panel(`Students (${L.length}/${D.students.length})`,'Search, suspend, delete, export',`<div class="row" style="margin-bottom:12px"><input class="field" id="q" placeholder="Search name, email, roll no…" value="${esc(q)}" style="flex:1;min-width:180px"><select class="field" id="semF" style="width:auto"><option value="">All semesters</option>${SEMS.map(m=>`<option ${m===sem?'selected':''}>${m}</option>`).join('')}</select><button class="btn secondary" data-a="csv">⬇ CSV</button></div>`+
+(L.map(s=>`<div class="list-row"><div style="flex:1;min-width:0"><strong>${esc(s.full_name)}</strong> <span class="bdg ${s.status==='Suspended'?'bad':'ok'}">${esc(s.status)}</span><div class="muted small">${esc(s.email)} · ${esc(s.phone||'—')} · ${esc(s.roll_no||'—')} · ${esc(s.course||'')} ${esc(s.semester||'')}</div></div><div class="row">${btn('set',  'students',s.id,`data-f="status" data-v="${s.status==='Suspended'?'Active':'Suspended'}"`)}${s.status==='Suspended'?'Activate':'Suspend'}</button>${btn('del','students',s.id,'','danger')}Delete</button></div></div>`).join('')||empty('No students found.')))},
+notices(){const ex=(D.settings.find(x=>x.key==='exam')||{}).value||{};
+return `<div class="g2"><div>${panel('Broadcast notice','Students ke Overview par dikhega',`<form class="gap" data-t="notices">${fld('title','Title')}<div class="r2">${sel('audience',['All Semesters',...SEMS])}${sel('priority',['Normal','High','Info'])}</div><textarea class="field" name="body" rows="3" required placeholder="Details…"></textarea><button class="btn">📢 Publish</button></form>`)}<div style="height:18px"></div>
+${panel('Official exam date','Student countdown me sync hota hai',`<form class="gap" id="examForm">${fld('title','Exam label (End-Sem Exams)')}${fld('date','','date')}<button class="btn">Save exam date</button><p class="muted small">${ex.date?`Current: ${esc(ex.title)} — ${esc(ex.date)}`:'Not set.'}</p></form>`)}</div>
+${panel(`Notices (${D.notices.length})`,'Hide / delete',D.notices.map(n=>`<div class="list-row" style="opacity:${n.active?1:.55}"><div style="flex:1"><strong>${esc(n.title)}</strong> <span class="bdg ${n.priority==='High'?'bad':''}">${esc(n.priority)}</span> <span class="muted small">${esc(n.audience)}</span><p style="margin:4px 0">${esc(n.body)}</p><small class="muted">${day(n.created_at)}</small></div><div class="row">${btn('set','notices',n.id,`data-f="active" data-v="${!n.active}"`)}${n.active?'Hide':'Show'}</button>${btn('del','notices',n.id,'','danger')}Delete</button></div></div>`).join('')||empty('No notices.'))}</div>`},
+academics(){const row=(t,r,a,b)=>`<div class="list-row"><div style="flex:1"><strong>${esc(a)}</strong><div class="muted small">${esc(b)}</div></div>${btn('del',t,r.id,'','danger')}Delete</button></div>`;
+return `<div class="g2">${panel('Push assignment','Student Assignments + Deadlines me aayega',`<form class="gap" data-t="assignments">${fld('title','Title')}<div class="r2">${fld('subject','Subject')}${fld('due','','date')}</div><div class="r2">${sel('priority',['High','Normal','Low'])}${fld('minutes','Est. minutes','number',0)}</div><textarea class="field" name="details" rows="2" placeholder="Instructions…"></textarea><button class="btn">Push assignment</button></form>`)}
+${panel('Push syllabus chapter','Student Syllabus tracker me aayega',`<form class="gap" data-t="syllabus">${fld('subject','Subject')}${fld('chapter','Unit / chapter')}<div class="r2">${sel('priority',['High','Medium','Low'])}${fld('target','','date',0)}</div><button class="btn">Push chapter</button></form>`)}
+${panel(`Assignments (${D.assignments.length})`,'',D.assignments.map(a=>row('assignments',a,a.title,`${a.subject||''} · due ${a.due||'—'} · ${a.priority}`)).join('')||empty('None.'))}
+${panel(`Syllabus (${D.syllabus.length})`,'',D.syllabus.map(a=>row('syllabus',a,`${a.subject}: ${a.chapter}`,`${a.priority}${a.target?' · target '+a.target:''}`)).join('')||empty('None.'))}</div>`},
+library(){return `<div class="g2">${panel('Add book / PDF','Link daalo — sab students ki Library me dikhega',`<form class="gap" data-t="library_books">${fld('title','Title')}<div class="r2">${fld('author','Author / subject',  'text',0)}${sel('semester',['All Semesters',...SEMS])}</div>${fld('resource_url','https://… (Drive / PDF link)','url',0)}<button class="btn">Add to library</button></form>`)}
+${panel(`Catalog (${D.library_books.length})`,'',D.library_books.map(b=>`<div class="list-row"><div style="flex:1"><strong>${esc(b.title)}</strong><div class="muted small">${esc(b.author||'General')} · ${esc(b.semester)}</div>${b.resource_url?`<a href="${esc(b.resource_url)}" target="_blank" rel="noopener" class="small">Open ↗</a>`:''}</div>${btn('del','library_books',b.id,'','danger')}Delete</button></div>`).join('')||empty('Empty.'))}</div>`},
+requests(){return panel(`Student requests (${pending()} pending)`,'Approve / reject',D.book_requests.map(r=>`<div class="list-row"><div style="flex:1"><strong>${esc(r.title)}</strong> <span class="bdg ${r.status==='Approved'?'ok':r.status==='Rejected'?'bad':'warn'}">${esc(r.status)}</span><div class="muted small">${esc(r.student_name)} · ${esc(r.roll_no||'')} · ${esc(r.semester||'')} · ${esc(r.req_type||'')}</div>${r.details?`<div class="small" style="margin-top:3px">${esc(r.details)}</div>`:''}</div><div class="row">${btn('set','book_requests',r.id,'data-f="status" data-v="Approved"')}Approve</button>${btn('set','book_requests',r.id,'data-f="status" data-v="Rejected"')}Reject</button>${btn('del','book_requests',r.id,'','danger')}Delete</button></div></div>`).join('')||empty('No requests.'))},
+audit(){return panel('Audit log','Last 100 admin actions',D.audit_log.slice(0,100).map(l=>`<div class="list-row"><div><strong>${esc(l.action)}</strong><div class="muted small">${esc(l.actor)} · ${new Date(l.created_at).toLocaleString()}</div></div></div>`).join('')||empty('Empty.'))}};
+
+function render(){$('nav').innerHTML='<p class="nav-label">ADMINISTRATION</p>'+Object.entries(TABS).map(([k,v])=>`<a href="#" class="nav-item ${k===tab?'active':''}" data-tab="${k}">${v}${k==='requests'&&pending()?` <span class="bdg warn">${pending()}</span>`:''}</a>`).join('');$('view').innerHTML=V[tab]()}
+document.addEventListener('click',e=>{const n=e.target.closest('[data-tab]');if(n){e.preventDefault();tab=n.dataset.tab;return render()}
+const b=e.target.closest('[data-a]');if(!b)return;const{a,t,id,f,v}=b.dataset;
+if(a==='del'&&confirm(t==='students'?'Remove this student profile? Use Suspend to block sign-in instead.':'Delete permanently?'))act('DELETE',`/api/admin/${t}/${id}`,null,'Deleted from '+t);
+if(a==='set')act('PATCH',`/api/admin/${t}/${id}`,{[f]:v==='true'?true:v==='false'?false:v},`Set ${f}=${v} in ${t}`);
+if(a==='csv'){const rows=[['Name','Email','Phone','Roll','Course','Semester','Status'],...D.students.map(s=>[s.full_name,s.email,s.phone,s.roll_no,s.course,s.semester,s.status])];const u=URL.createObjectURL(new Blob([rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\n')],{type:'text/csv'}));Object.assign(document.createElement('a'),{href:u,download:'students.csv'}).click()}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){q=e.target.value;const p=e.target.selectionStart;render();const i=$('q');i.focus();i.setSelectionRange(p,p)}});
+document.addEventListener('change',e=>{if(e.target.id==='semF'){sem=e.target.value;render()}});
+document.addEventListener('submit',e=>{const f=e.target;if(f.id==='loginForm'||f.id==='examForm'&&0)return;e.preventDefault();const o=Object.fromEntries(new FormData(f));
+if(f.id==='examForm')return act('PUT','/api/admin/settings/exam',o,'Exam date set: '+o.date);
+const t=f.dataset.t;for(const k in o)if(o[k]==='')delete o[k];if(o.minutes)o.minutes=+o.minutes;act('POST','/api/admin/'+t,o,'Added to '+t+': '+(o.title||o.chapter||''));f.reset()});
+$('loginForm').onsubmit=async e=>{e.preventDefault();const b=$('aBtn');b.disabled=true;b.textContent='Verifying…';try{await A.Identity.login($('aEmail').value.trim().toLowerCase(),$('aPass').value);await boot(true)}catch(err){toast(/invalid|401|password/i.test(String(err.message))?'Incorrect email or password.':err.message,1)}finally{b.disabled=false;b.textContent='Sign in 🛡️'}};
+$('out').onclick=async e=>{e.preventDefault();await A.logout();location.href='login.html?signedout=1'};$('refresh').onclick=load;
+async function boot(fromLogin){let u=null;try{u=await A.Identity.getUser()}catch{}if(!u)return;
+let info;try{info=await A.loadMe()}catch(e){if(fromLogin)toast(e.message,1);return}
+if(!info.isAdmin){$('gateMsg').textContent='This account does not have administrator access.';await A.logout();return}
+me=info.user.email;$('who').textContent='Signed in: '+me;$('gate').style.display='none';$('app').style.display='';load()}
+boot();
+})();
+</script></body></html>
