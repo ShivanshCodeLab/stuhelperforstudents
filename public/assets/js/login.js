@@ -284,22 +284,3 @@ $('profileSignOut').onclick = async e => { e.preventDefault(); await A.logout();
   }
 })();
 
-// ---------- first-time admin setup (only for emails listed as administrators) ----------
-$('adminSetupLink').onclick = e => {
-  e.preventDefault();
-  clearAlert();
-  const email = normEmail($('adminEmail').value);
-  const password = $('adminPass').value;
-  if (!email.includes('@') || password.length < 8) return showAlert('Enter the admin email and choose a password (at least 8 characters), then click "Create the admin account".', 'info');
-  busy($('adminLoginForm').querySelector('[type=submit]'), 'Creating admin account…', async () => {
-    try {
-      const check = await fetch('/api/check-available', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }).then(r => r.ok ? r.json() : {});
-      if (!check.adminEmail) return showAlert('This email is not on the administrator list for this site.');
-      const user = await Identity.signup(email, password, { full_name: 'Administrator' });
-      if (user.emailVerified || user.confirmedAt) return finishSignIn({ expectAdmin: true });
-      pendingSignup = { email, password, data: { full_name: 'Administrator' } };
-      $('checkEmailText').textContent = `We sent a confirmation link to ${email}. Open it to activate the admin account.`;
-      show('checkEmailPanel');
-    } catch (err) { showAlert(friendlyError(err)); }
-  });
-};
