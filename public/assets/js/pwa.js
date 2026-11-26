@@ -1,5 +1,10 @@
 // Registers the service worker (install + offline) and runs assignment reminders.
 (() => {
+  // Old links and bookmarks may still end in ".html": show the clean address instead (/login.html -> /login).
+  if (/\.html$/.test(location.pathname)) {
+    const clean = location.pathname.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '') || '/';
+    history.replaceState(history.state, '', clean + location.search + location.hash);
+  }
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }

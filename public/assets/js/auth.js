@@ -86,20 +86,20 @@ window.SH_AUTH = { Identity, api, loadMe, syncContent, syncRequests, logout, rea
 window.dispatchEvent(new Event('sh-auth-ready'));
 
 // On workspace pages: verify the account is still valid, then refresh shared content in the background.
-const page = location.pathname.split('/').pop() || 'index.html';
-const isAuthPage = page === 'login.html' || page === 'admin.html' || page === 'login';
+const page = (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '');
+const isAuthPage = page === 'login' || page === 'admin' || page === 'login';
 if (!isAuthPage && readSession()) {
   (async () => {
     try {
       const me = await loadMe();
-      if (!me.isAdmin && !me.profile) { location.replace('login.html#complete-profile'); return; }
+      if (!me.isAdmin && !me.profile) { location.replace('login#complete-profile'); return; }
       await syncContent();
       if (document.getElementById('publishQueue')) { await syncRequests(); window.dispatchEvent(new Event('sh-requests-updated')); }
       window.dispatchEvent(new Event('sh-content-updated'));
     } catch (e) {
       if (e.status === 401 || e.status === 403) {
         await logout();
-        location.replace('login.html' + (e.data && e.data.error === 'suspended' ? '?suspended=1' : '?expired=1'));
+        location.replace('login' + (e.data && e.data.error === 'suspended' ? '?suspended=1' : '?expired=1'));
       } else {
         console.warn('StuHelper sync skipped', e);
       }

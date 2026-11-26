@@ -58,36 +58,36 @@
     if (overdue.length) {
       title = `${plural(overdue.length, 'assignment')} overdue`;
       text = `“${overdue[0].title}” was due ${plural(daysBetween(parseDay(overdue[0].due), today), 'day')} ago. Finish it first, then plan the rest of your day.`;
-      linkText = 'Review overdue work'; linkHref = 'assignments.html';
+      linkText = 'Review overdue work'; linkHref = 'assignments';
     } else if (dueToday.length) {
       title = `${dueToday.length === 1 ? '1 assignment' : dueToday.length + ' assignments'} due today`;
       text = `“${dueToday[0].title}”${dueToday[0].subject ? ' (' + dueToday[0].subject + ')' : ''} is due today. A focused session now keeps you ahead.`;
-      linkText = 'Open assignments'; linkHref = 'assignments.html';
+      linkText = 'Open assignments'; linkHref = 'assignments';
     } else if (upcoming.length) {
       const d = daysBetween(today, parseDay(upcoming[0].due));
       title = `Next up: ${upcoming[0].title}`;
       text = `Due ${d === 1 ? 'tomorrow' : 'in ' + plural(d, 'day')}${upcoming[0].subject ? ' · ' + upcoming[0].subject : ''}. You have ${plural(upcoming.length, 'upcoming deadline')} in total.`;
-      linkText = 'See all deadlines'; linkHref = 'assignments.html';
+      linkText = 'See all deadlines'; linkHref = 'assignments';
     } else if (nothingYet) {
       title = "Let's set up your study space";
       text = 'Add your subjects and chapters, then your first assignment. Everything stays on this device.';
-      linkText = 'Add syllabus'; linkHref = 'syllabus.html';
+      linkText = 'Add syllabus'; linkHref = 'syllabus';
     } else {
       title = 'You are all caught up';
       text = 'No pending deadlines. Use the time to revise a chapter or start a focus session.';
-      linkText = 'Open syllabus'; linkHref = 'syllabus.html';
+      linkText = 'Open syllabus'; linkHref = 'syllabus';
     }
     $('ovHeroTitle').textContent = title; $('ovHeroText').textContent = text; link.textContent = linkText; link.href = linkHref;
     $('ovStreak').textContent = streak > 1 ? `🔥 ${streak}-day focus streak` : streak === 1 ? '🔥 Focus streak started' : 'A little progress, every day';
 
     // "Today" panel
     const rows = [];
-    rows.push({ k: 'Daily goal', v: dailyGoalText || 'Not set', href: 'productivity.html', muted: !dailyGoalText });
-    rows.push({ k: 'Focus today', v: dailyTarget ? `${todayMins} / ${dailyTarget} min` : `${todayMins} min`, href: 'productivity.html#timer', bar: dailyTarget ? Math.min(100, Math.round(todayMins / dailyTarget * 100)) : null });
-    rows.push({ k: 'Habits', v: `${habitsDone} of 4 done`, href: 'productivity.html', bar: Math.round(habitsDone / 4 * 100) });
+    rows.push({ k: 'Daily goal', v: dailyGoalText || 'Not set', href: 'productivity', muted: !dailyGoalText });
+    rows.push({ k: 'Focus today', v: dailyTarget ? `${todayMins} / ${dailyTarget} min` : `${todayMins} min`, href: 'productivity#timer', bar: dailyTarget ? Math.min(100, Math.round(todayMins / dailyTarget * 100)) : null });
+    rows.push({ k: 'Habits', v: `${habitsDone} of 4 done`, href: 'productivity', bar: Math.round(habitsDone / 4 * 100) });
     if (examDate) {
       const d = daysBetween(today, parseDay(examDate));
-      rows.push({ k: 'Exam', v: d > 0 ? `in ${plural(d, 'day')}` : d === 0 ? 'Today — good luck!' : 'Date passed', href: 'students.html' });
+      rows.push({ k: 'Exam', v: d > 0 ? `in ${plural(d, 'day')}` : d === 0 ? 'Today — good luck!' : 'Date passed', href: 'students' });
     }
     $('ovTodayList').innerHTML = rows.map(r => `<li><a href="${r.href}"><span class="ov-today-k">${esc(r.k)}</span><span class="ov-today-v${r.muted ? ' is-muted' : ''}">${esc(r.v)}</span>${r.bar == null ? '' : `<span class="ov-mini"><span style="width:${r.bar}%"></span></span>`}</a></li>`).join('');
 
@@ -114,20 +114,20 @@
     const subjects = Object.entries(groups).sort((a, b) => (a[1].done / a[1].all) - (b[1].done / b[1].all)).slice(0, 4);
     $('ovSubjects').innerHTML = subjects.length
       ? subjects.map(([n, g]) => { const p = Math.round(g.done / g.all * 100); return `<div class="ov-subject"><div><strong>${esc(n)}</strong><small>${g.done}/${g.all} · ${p}%</small></div><div class="ov-bar" role="progressbar" aria-label="${esc(n)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><span style="width:${p}%"></span></div></div>`; }).join('')
-      : `<div class="ov-empty"><strong>No subjects yet</strong><small>Add your first subject to track chapters.</small><a class="ov-btn ov-btn-solid" href="syllabus.html">Add a subject</a></div>`;
+      : `<div class="ov-empty"><strong>No subjects yet</strong><small>Add your first subject to track chapters.</small><a class="ov-btn ov-btn-solid" href="syllabus">Add a subject</a></div>`;
 
     /* ---------- deadlines ---------- */
     const list = [...overdue.slice(0, 2), ...upcoming].slice(0, 4);
     const host = $('dashUpcoming');
     if (!list.length) {
-      host.innerHTML = `<div class="ov-empty"><strong>${assignments.some(x => !x.done) ? 'No dated deadlines' : 'Your schedule is clear'}</strong><small>Add an assignment with a due date and it will show up here.</small><a class="ov-btn ov-btn-solid" href="assignments.html">Add an assignment</a></div>`;
+      host.innerHTML = `<div class="ov-empty"><strong>${assignments.some(x => !x.done) ? 'No dated deadlines' : 'Your schedule is clear'}</strong><small>Add an assignment with a due date and it will show up here.</small><a class="ov-btn ov-btn-solid" href="assignments">Add an assignment</a></div>`;
     } else {
       host.innerHTML = list.map(x => {
         const d = parseDay(x.due), delta = daysBetween(today, d);
         const state = delta < 0 ? ['Overdue', 'is-overdue'] : delta === 0 ? ['Today', 'is-today'] : delta === 1 ? ['Tomorrow', 'is-soon'] : delta <= 3 ? [`${delta} days`, 'is-soon'] : [`${delta} days`, ''];
         const idx = assignments.indexOf(x);
         return `<div class="ov-deadline ${state[1]}"><span class="ov-date-chip"><b>${d.getDate()}</b><small>${esc(d.toLocaleDateString(undefined, { month: 'short' }))}</small></span><span class="ov-deadline-copy"><strong title="${esc(x.title)}">${esc(x.title)}</strong><small>${esc(x.subject || 'General')}${x.priority === 'High' ? ' · High priority' : ''}</small></span><span class="ov-chip ${state[1]}">${state[0]}</span><button class="ov-check" type="button" data-done="${idx}" aria-label="Mark ${esc(x.title)} as done" title="Mark as done">✓</button></div>`;
-      }).join('') + (open.length > list.length ? `<a class="ov-more" href="assignments.html">+ ${open.length - list.length} more</a>` : '');
+      }).join('') + (open.length > list.length ? `<a class="ov-more" href="assignments">+ ${open.length - list.length} more</a>` : '');
     }
     host.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', () => {
       const all = get('assignments', []), i = Number(b.dataset.done);

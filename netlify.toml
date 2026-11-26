@@ -8,7 +8,7 @@
 # Old local-only pages from earlier versions point here.
 [[redirects]]
   from = "/signin"
-  to = "/login.html"
+  to = "/login"
   status = 301
 
 [[headers]]

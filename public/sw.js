@@ -2,10 +2,10 @@
 // - App pages and static files: cached, refreshed in the background.
 // - /api/* and Netlify Identity: never cached (always live data).
 // - CDN libraries (PDF/Word tools): cached after first use so those tools keep working offline.
-const VERSION = 'stuhelper-v1';
+const VERSION = 'stuhelper-v2';
 const CORE = [
-  'index.html', 'workspace.html', 'library.html', 'syllabus.html', 'assignments.html', 'productivity.html',
-  'students.html', 'documents.html', 'images.html', 'merge-pdf.html', 'recent.html', 'settings.html', 'login.html',
+  '/', 'workspace', 'library', 'syllabus', 'assignments', 'productivity',
+  'students', 'documents', 'images', 'merge-pdf', 'recent', 'settings', 'login',
   'assets/css/style.css', 'assets/images/stuhelper-logo.png', 'assets/images/icon-192.png',
   'assets/js/app.js', 'assets/js/auth.js', 'assets/js/sync.js', 'assets/js/pwa.js', 'assets/js/enhancements.js',
   'assets/js/final-polish.js', 'assets/js/overview.js', 'assets/js/extras.js', 'assets/js/library.js',
@@ -39,7 +39,7 @@ self.addEventListener('fetch', e => {
     if (cached) { e.waitUntil(network); return cached; }
     const res = await network;
     if (res) return res;
-    if (req.mode === 'navigate') return (await cache.match('index.html')) || Response.error();
+    if (req.mode === 'navigate') return (await cache.match('/')) || Response.error();
     return Response.error();
   }));
 });
@@ -48,6 +48,6 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(self.clients.matchAll({ type: 'window' }).then(list => {
     const open = list.find(c => 'focus' in c);
-    return open ? open.focus() : self.clients.openWindow('assignments.html');
+    return open ? open.focus() : self.clients.openWindow('assignments');
   }));
 });

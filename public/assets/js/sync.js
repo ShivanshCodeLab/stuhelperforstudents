@@ -10,8 +10,8 @@ const PLAIN = ['todos', 'studyTasks', 'savedNotes', 'notes', 'flashcards', 'time
 const KEYS = [...PLAIN, 'assignments_mine', 'syllabus_mine', 'adminDone'];
 const META_KEY = 'dh__syncMeta', OWNER_KEY = 'dh__syncOwner';
 
-const page = location.pathname.split('/').pop() || 'index.html';
-const skipPage = ['login.html', 'admin.html', 'login'].includes(page);
+const page = (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '');
+const skipPage = ['login', 'admin', 'login'].includes(page);
 
 const rawGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const rawSet = Storage.prototype.setItem, rawRemove = Storage.prototype.removeItem;

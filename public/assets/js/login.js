@@ -98,13 +98,13 @@ async function finishSignIn({ expectAdmin = false } = {}) {
   }
   if (me.isAdmin) {
     sessionStorage.removeItem('dh_admin_preview');
-    location.replace('admin.html');
+    location.replace('admin');
     return;
   }
   if (!me.profile) return showProfileForm(me);
   showAlert('Signed in! Loading your workspace…', 'success');
   try { await A.syncContent(); } catch {}
-  location.replace('index.html');
+  location.replace('/');
 }
 
 function showProfileForm(me) {

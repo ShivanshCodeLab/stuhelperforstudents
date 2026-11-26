@@ -2,7 +2,7 @@
   "name": "StuHelper",
   "short_name": "StuHelper",
   "description": "Study Smart. Achieve More. Your syllabus, assignments, notes and study tools in one place.",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
