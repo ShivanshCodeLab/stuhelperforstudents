@@ -20,6 +20,8 @@
 <div class="toast" id="toast"></div>
 <script type="module">
 import "./assets/js/auth.js";
+// Strict: a signed-in student who opens /admin is sent straight back to their workspace.
+try{const s0=JSON.parse(localStorage.getItem('dh_session'));if(s0&&s0.role!=='admin'){document.documentElement.style.visibility='hidden';}}catch{}
 (()=>{
 const A=window.SH_AUTH;
 const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -74,10 +76,10 @@ if(f.id==='examForm')return act('PUT','/api/admin/settings/exam',o,'Exam date se
 const t=f.dataset.t;for(const k in o)if(o[k]==='')delete o[k];if(o.minutes)o.minutes=+o.minutes;act('POST','/api/admin/'+t,o,'Added to '+t+': '+(o.title||o.chapter||''));f.reset()});
 $('loginForm').onsubmit=async e=>{e.preventDefault();const b=$('aBtn');b.disabled=true;b.textContent='Verifying…';try{await A.Identity.login($('aEmail').value.trim().toLowerCase(),$('aPass').value);await boot(true)}catch(err){toast(/invalid|401|password/i.test(String(err.message))?'Incorrect email or password.':err.message,1)}finally{b.disabled=false;b.textContent='Sign in 🛡️'}};
 $('out').onclick=async e=>{e.preventDefault();await A.logout();location.href='login?signedout=1'};$('refresh').onclick=load;
-async function boot(fromLogin){let u=null;try{u=await A.Identity.getUser()}catch{}if(!u)return;
-let info;try{info=await A.loadMe()}catch(e){if(fromLogin)toast(e.message,1);return}
-if(!info.isAdmin){$('gateMsg').textContent='This account does not have administrator access.';await A.logout();return}
-me=info.user.email;$('who').textContent='Signed in: '+me;$('gate').style.display='none';$('app').style.display='';load()}
+async function boot(fromLogin){let u=null;try{u=await A.Identity.getUser()}catch{}if(!u){document.documentElement.style.visibility='';const ss=A.readSession();if(ss&&ss.role!=='admin'){location.replace('/');}return}
+let info;try{info=await A.loadMe()}catch(e){document.documentElement.style.visibility='';if(fromLogin)toast(e.message,1);return}
+if(!info.isAdmin){location.replace('/');return}
+document.documentElement.style.visibility='';me=info.user.email;$('who').textContent='Signed in: '+me;$('gate').style.display='none';$('app').style.display='';load()}
 boot();
 })();
 </script></body></html>
