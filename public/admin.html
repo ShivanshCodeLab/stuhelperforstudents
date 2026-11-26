@@ -9,7 +9,7 @@
 .gate{max-width:380px;margin:12vh auto;padding:0 16px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sm{padding:5px 10px!important;font-size:11px!important}
 /*gate*/.gate .panel{min-width:0;overflow:hidden}.gate .gap{grid-template-columns:minmax(0,1fr)}.gate img{max-width:100%;height:auto;max-height:90px;object-fit:contain;justify-self:start}.gate .field,.gate .btn{width:100%;box-sizing:border-box}
 @media(max-width:900px){.g2{grid-template-columns:1fr}}
-</style></head><body>
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/images/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><script src="assets/js/pwa.js" defer></script></head><body>
 <div id="gate" class="gate"><div class="panel gap"><img class="brand-logo-image" src="assets/images/stuhelper-logo.png" alt="StuHelper"><h2 style="margin:0">Admin Sign In</h2><p class="muted small" id="gateMsg">Sign in with your administrator account.</p>
 <form id="loginForm" class="gap"><input class="field" id="aEmail" type="email" placeholder="Admin email" autocomplete="email" required><input class="field" id="aPass" type="password" placeholder="Password" autocomplete="current-password" required><button class="btn" type="submit" id="aBtn">Sign in 🛡️</button></form><a class="small" href="login.html?admin=1" style="color:#1748a4;font-weight:700">Forgot password? · Student login</a></div></div>
 <div class="app-container" id="app" style="display:none">

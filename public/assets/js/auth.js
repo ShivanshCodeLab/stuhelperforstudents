@@ -61,7 +61,9 @@ async function syncContent() {
   set('dh_admin_notices', data.notices.map(r => ({ id: r.id, title: r.title, body: r.body, priority: r.priority, audience: r.audience, active: r.active, createdAt: new Date(r.created_at).toLocaleString() })));
   const keep = (k, list, map) => { const mine = get(k, []).filter(i => !String(i.id).startsWith('ADM-')); set(k, list.map(map).concat(mine)); };
   const prev = id => (get('dh_syllabus', []).find(x => x.id === 'ADM-' + id) || {}).done || false;
-  keep('dh_assignments', data.assignments, r => ({ id: 'ADM-' + r.id, title: r.title, subject: r.subject, due: r.due, priority: r.priority, estimate: r.minutes, details: r.details, official: true }));
+  // Keep the student's own "done" tick on admin-published assignments (it used to be reset on every sync).
+  const prevA = id => (get('dh_assignments', []).find(x => x.id === 'ADM-' + id) || {}).done || false;
+  keep('dh_assignments', data.assignments, r => ({ id: 'ADM-' + r.id, title: r.title, subject: r.subject, due: r.due, priority: r.priority, estimate: r.minutes, details: r.details, official: true, done: prevA(r.id) }));
   keep('dh_syllabus', data.syllabus, r => ({ id: 'ADM-' + r.id, subject: r.subject, chapter: r.chapter, priority: r.priority, target: r.target, done: prev(r.id) }));
   keep('dh_library', data.library_books, r => ({ id: 'ADM-' + r.id, adminBookId: r.id, title: r.title, type: /\.pdf/i.test(r.file_name || r.resource_url || '') ? 'PDF' : 'Book', subject: r.semester, description: r.author ? 'Author/Subject: ' + r.author : 'Published by Admin', url: r.resource_url || '', fileName: r.file_name || '', created: r.created_at }));
   const ex = (data.settings || []).find(r => r.key === 'exam');
@@ -75,6 +77,7 @@ async function syncRequests() {
 }
 
 async function logout() {
+  try { await window.SH_SYNC?.flush(); } catch {}   // push any unsynced study data before signing out
   clearSession();
   try { await Identity.logout(); } catch {}
 }
