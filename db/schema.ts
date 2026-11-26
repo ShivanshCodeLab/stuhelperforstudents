@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, boolean, integer, date, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, boolean, integer, date, jsonb, unique } from "drizzle-orm/pg-core";
 
 // Student profiles, linked to a Netlify Identity account by identity_id.
 export const students = pgTable("students", {
@@ -79,3 +79,16 @@ export const auditLog = pgTable("audit_log", {
   action: text(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Per-student synced study data (notes, tasks, flashcards, progress...). One row per student per key.
+export const userData = pgTable(
+  "user_data",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    identityId: text("identity_id").notNull(),
+    key: text().notNull(),
+    value: jsonb(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("user_data_identity_key_unique").on(t.identityId, t.key)],
+);

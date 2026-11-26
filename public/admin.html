@@ -9,17 +9,19 @@
 .gate{max-width:380px;margin:12vh auto;padding:0 16px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sm{padding:5px 10px!important;font-size:11px!important}
 /*gate*/.gate .panel{min-width:0;overflow:hidden}.gate .gap{grid-template-columns:minmax(0,1fr)}.gate img{max-width:100%;height:auto;max-height:90px;object-fit:contain;justify-self:start}.gate .field,.gate .btn{width:100%;box-sizing:border-box}
 @media(max-width:900px){.g2{grid-template-columns:1fr}}
-</style></head><body>
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/images/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><script src="assets/js/pwa.js" defer></script></head><body>
 <div id="gate" class="gate"><div class="panel gap"><img class="brand-logo-image" src="assets/images/stuhelper-logo.png" alt="StuHelper"><h2 style="margin:0">Admin Sign In</h2><p class="muted small" id="gateMsg">Sign in with your administrator account.</p>
-<form id="loginForm" class="gap"><input class="field" id="aEmail" type="email" placeholder="Admin email" autocomplete="email" required><input class="field" id="aPass" type="password" placeholder="Password" autocomplete="current-password" required><button class="btn" type="submit" id="aBtn">Sign in 🛡️</button></form><a class="small" href="login.html?admin=1" style="color:#1748a4;font-weight:700">Forgot password? · Student login</a></div></div>
+<form id="loginForm" class="gap"><input class="field" id="aEmail" type="email" placeholder="Admin email" autocomplete="email" required><input class="field" id="aPass" type="password" placeholder="Password" autocomplete="current-password" required><button class="btn" type="submit" id="aBtn">Sign in 🛡️</button></form><a class="small" href="login?admin=1" style="color:#1748a4;font-weight:700">Forgot password? · Student login</a></div></div>
 <div class="app-container" id="app" style="display:none">
 <aside class="sidebar"><div class="logo"><img class="brand-logo-image" src="assets/images/stuhelper-logo.png" alt="StuHelper Admin"></div>
 <nav id="nav"><p class="nav-label">ADMINISTRATION</p></nav>
-<div class="sidebar-bottom"><a class="nav-item" href="index.html?preview=student"><span class="nav-icon">👁️</span>Student View</a><a class="nav-item" href="#" id="out"><span class="nav-icon">🚪</span>Sign out</a></div></aside>
+<div class="sidebar-bottom"><a class="nav-item" href="/?preview=student"><span class="nav-icon">👁️</span>Student View</a><a class="nav-item" href="#" id="out"><span class="nav-icon">🚪</span>Sign out</a></div></aside>
 <main class="main-content"><header class="topbar"><div><h3>StuHelper Admin Console</h3><p id="who"></p></div><button class="btn secondary" id="refresh">↻ Refresh</button></header><div id="view"></div></main></div>
 <div class="toast" id="toast"></div>
 <script type="module">
 import "./assets/js/auth.js";
+// Strict: a signed-in student who opens /admin is sent straight back to their workspace.
+try{const s0=JSON.parse(localStorage.getItem('dh_session'));if(s0&&s0.role!=='admin'){document.documentElement.style.visibility='hidden';}}catch{}
 (()=>{
 const A=window.SH_AUTH;
 const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -36,7 +38,7 @@ const btn=(a,t,id,x='',cls='secondary')=>`<button class="btn ${cls} sm" data-a="
 const pending=()=>D.book_requests.filter(r=>r.status==='Pending').length;
 const day=d=>new Date(d).toLocaleDateString();
 
-async function load(){try{Object.assign(D,await A.api('/api/admin/data'))}catch(e){if(e.status===401||e.status===403)return location.replace('login.html?admin=1&expired=1');toast(e.message,1)}render()}
+async function load(){try{Object.assign(D,await A.api('/api/admin/data'))}catch(e){if(e.status===401||e.status===403)return location.replace('login?admin=1&expired=1');toast(e.message,1)}render()}
 async function act(method,path,body,log){try{await A.api(path,{method,body});toast('✓ '+log);load()}catch(e){toast(e.message,1)}}
 
 const V={
@@ -73,11 +75,11 @@ document.addEventListener('submit',e=>{const f=e.target;if(f.id==='loginForm'||f
 if(f.id==='examForm')return act('PUT','/api/admin/settings/exam',o,'Exam date set: '+o.date);
 const t=f.dataset.t;for(const k in o)if(o[k]==='')delete o[k];if(o.minutes)o.minutes=+o.minutes;act('POST','/api/admin/'+t,o,'Added to '+t+': '+(o.title||o.chapter||''));f.reset()});
 $('loginForm').onsubmit=async e=>{e.preventDefault();const b=$('aBtn');b.disabled=true;b.textContent='Verifying…';try{await A.Identity.login($('aEmail').value.trim().toLowerCase(),$('aPass').value);await boot(true)}catch(err){toast(/invalid|401|password/i.test(String(err.message))?'Incorrect email or password.':err.message,1)}finally{b.disabled=false;b.textContent='Sign in 🛡️'}};
-$('out').onclick=async e=>{e.preventDefault();await A.logout();location.href='login.html?signedout=1'};$('refresh').onclick=load;
-async function boot(fromLogin){let u=null;try{u=await A.Identity.getUser()}catch{}if(!u)return;
-let info;try{info=await A.loadMe()}catch(e){if(fromLogin)toast(e.message,1);return}
-if(!info.isAdmin){$('gateMsg').textContent='This account does not have administrator access.';await A.logout();return}
-me=info.user.email;$('who').textContent='Signed in: '+me;$('gate').style.display='none';$('app').style.display='';load()}
+$('out').onclick=async e=>{e.preventDefault();await A.logout();location.href='login?signedout=1'};$('refresh').onclick=load;
+async function boot(fromLogin){let u=null;try{u=await A.Identity.getUser()}catch{}if(!u){document.documentElement.style.visibility='';const ss=A.readSession();if(ss&&ss.role!=='admin'){location.replace('/');}return}
+let info;try{info=await A.loadMe()}catch(e){document.documentElement.style.visibility='';if(fromLogin)toast(e.message,1);return}
+if(!info.isAdmin){location.replace('/');return}
+document.documentElement.style.visibility='';me=info.user.email;$('who').textContent='Signed in: '+me;$('gate').style.display='none';$('app').style.display='';load()}
 boot();
 })();
 </script></body></html>

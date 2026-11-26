@@ -1,24 +1,24 @@
 /* === StuHelper Auth Guard, Profile Sync & Sidebar User Badge === */
 (() => {
-  const page = location.pathname.split('/').pop() || 'index.html';
-  const isLogin = page === 'login.html';
-  const isAdminPage = page === 'admin.html';
+  const page = (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '');
+  const isLogin = page === 'login';
+  const isAdminPage = page === 'admin';
   let session = null;
   try { session = JSON.parse(localStorage.getItem('dh_session')); } catch {}
 
   // Email links (confirm account, reset password, invites) land on the site root with a token in the hash.
   if (/(confirmation|recovery|invite|email_change)_token=|access_token=/.test(location.hash) && !isLogin) {
-    location.replace('login.html' + location.hash);
+    location.replace('login' + location.hash);
     return;
   }
 
   if (!session && !isLogin) {
-    location.replace('login.html');
+    location.replace('login');
     return;
   }
 
   if (session && isLogin) {
-    location.replace(session.role === 'admin' ? 'admin.html' : 'index.html');
+    location.replace(session.role === 'admin' ? 'admin' : '/');
     return;
   }
 
@@ -27,7 +27,7 @@
       sessionStorage.setItem('dh_admin_preview', '1');
     }
     if (sessionStorage.getItem('dh_admin_preview') !== '1') {
-      location.replace('admin.html');
+      location.replace('admin');
       return;
     }
   }
@@ -36,7 +36,7 @@
   }
 
   if (session && isAdminPage && session.role !== 'admin') {
-    location.replace('index.html');
+    location.replace('/');
     return;
   }
 
@@ -61,7 +61,7 @@
       if (session && session.role === 'admin' && sessionStorage.getItem('dh_admin_preview') === '1') {
         const prevBar = document.createElement('div');
         prevBar.style.cssText = 'margin-bottom:14px;padding:10px 14px;border-radius:12px;background:#111827;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;';
-        prevBar.innerHTML = '<span>👁️ <strong>Admin Preview Mode</strong> — Viewing Student Workspace</span><a href="admin.html" style="background:#fff;color:#111827;padding:5px 11px;border-radius:8px;font-weight:700;text-decoration:none;">Back to Admin Console →</a>';
+        prevBar.innerHTML = '<span>👁️ <strong>Admin Preview Mode</strong> — Viewing Student Workspace</span><a href="admin" style="background:#fff;color:#111827;padding:5px 11px;border-radius:8px;font-weight:700;text-decoration:none;">Back to Admin Console →</a>';
         mainEl.prepend(prevBar);
       }
       let notices = [];
@@ -98,7 +98,7 @@
         e.currentTarget.textContent = 'Signing out…';
         localStorage.removeItem('dh_session');
         try { if (window.SH_AUTH) await window.SH_AUTH.logout(); } catch {}
-        location.href = 'login.html?signedout=1';
+        location.href = 'login?signedout=1';
       });
     }
   });

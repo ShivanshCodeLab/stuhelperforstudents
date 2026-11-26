@@ -11,6 +11,7 @@ import {
   syllabus,
   settings,
   auditLog,
+  userData,
 } from "../../db/schema.js";
 
 type IdentityUser = {
@@ -21,7 +22,7 @@ type IdentityUser = {
   meta: Record<string, unknown>;
 };
 
-type Vars = { user: IdentityUser; isAdmin: boolean };
+type Vars = { user: IdentityUser; isAdmin: boolean; profile: typeof students.$inferSelect | null };
 
 const app = new Hono<{ Variables: Vars }>();
 
@@ -77,6 +78,23 @@ async function log(actor: string, action: string) {
   await db.insert(auditLog).values({ actor, action });
 }
 
+// Best-effort per-instance rate limiter for public endpoints (serverless instances don't share memory,
+// so this slows abuse down but is not a hard guarantee).
+const hits = new Map<string, { n: number; reset: number }>();
+function rateLimited(key: string, max = 15, windowMs = 60_000): boolean {
+  const now = Date.now();
+  if (hits.size > 2000) for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+  const h = hits.get(key);
+  if (!h || h.reset < now) {
+    hits.set(key, { n: 1, reset: now + windowMs });
+    return false;
+  }
+  h.n += 1;
+  return h.n > max;
+}
+const clientIp = (c: { req: { header: (n: string) => string | undefined } }) =>
+  c.req.header("x-nf-client-connection-ip") ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
 // ---------- auth middleware ----------
 
 app.use("/api/*", async (c, next) => {
@@ -86,8 +104,13 @@ app.use("/api/*", async (c, next) => {
   if (!token) return c.json({ error: "unauthorized" }, 401);
   const user = await verifyToken(token, new URL(c.req.url).origin);
   if (!user) return c.json({ error: "unauthorized" }, 401);
+  const isAdmin = isAdminUser(user);
+  // Load the student profile once per request and block suspended students on EVERY endpoint.
+  const [profile] = await db.select().from(students).where(eq(students.identityId, user.id));
+  if (profile?.status === "Suspended" && !isAdmin) return c.json({ error: "suspended" }, 403);
   c.set("user", user);
-  c.set("isAdmin", isAdminUser(user));
+  c.set("isAdmin", isAdmin);
+  c.set("profile", profile ?? null);
   return next();
 });
 
@@ -102,6 +125,7 @@ app.get("/api/health", (c) => c.json({ ok: true }));
 
 // Public pre-signup check so students get instant feedback on duplicate email / phone.
 app.post("/api/check-available", async (c) => {
+  if (rateLimited("check:" + clientIp(c))) return c.json({ error: "Too many requests. Please wait a minute and try again." }, 429);
   const body = await c.req.json().catch(() => ({}));
   const email = normEmail(body.email);
   const phone = normPhone(body.phone);
@@ -200,6 +224,8 @@ app.post("/api/me/profile", async (c) => {
 // ---------- student content ----------
 
 app.get("/api/content", async (c) => {
+  const semester = clean(c.get("profile")?.semester, 40);
+  const isAdmin = c.get("isAdmin");
   const [n, a, s, l, x] = await Promise.all([
     db.select().from(notices).where(eq(notices.active, true)).orderBy(desc(notices.createdAt)),
     db.select().from(assignments).orderBy(desc(assignments.createdAt)),
@@ -207,7 +233,9 @@ app.get("/api/content", async (c) => {
     db.select().from(libraryBooks).orderBy(desc(libraryBooks.createdAt)),
     db.select().from(settings),
   ]);
-  return c.json({ notices: rows(n), assignments: rows(a), syllabus: rows(s), library_books: rows(l), settings: rows(x) });
+  // Semester-specific notices are filtered on the server, so students never receive other semesters' notices.
+  const visibleNotices = isAdmin ? n : n.filter((x) => !x.audience || x.audience === "All Semesters" || x.audience === semester);
+  return c.json({ notices: rows(visibleNotices), assignments: rows(a), syllabus: rows(s), library_books: rows(l), settings: rows(x) });
 });
 
 app.get("/api/requests", async (c) => {
@@ -238,6 +266,38 @@ app.post("/api/requests", async (c) => {
     })
     .returning();
   return c.json({ request: toSnake(row) }, 201);
+});
+
+// ---------- cloud sync (per-student study data) ----------
+
+// Whitelist of keys the browser may store in the cloud. The three virtual keys split the
+// admin-published lists from the student's own items (see public/assets/js/sync.js).
+const SYNC_KEYS = new Set([
+  "todos", "studyTasks", "savedNotes", "notes", "flashcards", "timetable", "dailyHabits", "dailyPlan",
+  "focusLog", "focusMinutes", "focusStreak", "focusSessions", "focusLastDay",
+  "studyPrefs", "reminderPrefs", "appearancePrefs", "recent",
+  "assignments_mine", "syllabus_mine", "adminDone",
+]);
+const SYNC_MAX_CHARS = 900_000;
+
+app.get("/api/sync", async (c) => {
+  const list = await db.select().from(userData).where(eq(userData.identityId, c.get("user").id));
+  return c.json({ items: list.map((r) => ({ key: r.key, value: r.value, updated_at: r.updatedAt })) });
+});
+
+app.put("/api/sync/:key", async (c) => {
+  const key = c.req.param("key");
+  if (!SYNC_KEYS.has(key)) return c.json({ error: "Unknown key" }, 400);
+  const body = await c.req.json().catch(() => null);
+  if (!body || !("value" in body)) return c.json({ error: "Missing value" }, 400);
+  if (JSON.stringify(body.value ?? null).length > SYNC_MAX_CHARS) return c.json({ error: "Too large to sync" }, 413);
+  const now = new Date();
+  const [row] = await db
+    .insert(userData)
+    .values({ identityId: c.get("user").id, key, value: body.value, updatedAt: now })
+    .onConflictDoUpdate({ target: [userData.identityId, userData.key], set: { value: body.value, updatedAt: now } })
+    .returning({ updatedAt: userData.updatedAt });
+  return c.json({ ok: true, updated_at: row.updatedAt });
 });
 
 // ---------- admin ----------
@@ -321,6 +381,11 @@ app.delete("/api/admin/:table/:id", async (c) => {
   const id = c.req.param("id");
   if (!isTable(t) || !DELETABLE.includes(t)) return c.json({ error: "Not allowed" }, 400);
   const table = TABLES[t] as any;
+  if (t === "students") {
+    // Also remove the student's synced study data. (The Netlify Identity login itself must be removed in the Netlify UI.)
+    const [st] = await db.select({ identityId: students.identityId }).from(students).where(eq(students.id, id));
+    if (st) await db.delete(userData).where(eq(userData.identityId, st.identityId));
+  }
   await db.delete(table).where(eq(table.id, id));
   await log(c.get("user").email, `Deleted from ${t}`);
   return c.json({ ok: true });

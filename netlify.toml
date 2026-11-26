@@ -8,7 +8,7 @@
 # Old local-only pages from earlier versions point here.
 [[redirects]]
   from = "/signin"
-  to = "/login.html"
+  to = "/login"
   status = 301
 
 [[headers]]
@@ -17,3 +17,14 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# The service worker must always be re-checked so updates reach students quickly.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"

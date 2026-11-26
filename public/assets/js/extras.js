@@ -4,7 +4,7 @@
   const get = (k, d) => { try { return JSON.parse(localStorage.getItem('dh_' + k)) ?? d; } catch (_) { return d; } };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const plain = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').trim(); };
-  const here = location.pathname.split('/').pop() || 'index.html';
+  const here = (location.pathname.split('/').pop() || '').replace(/\.html$/, '').replace(/^index$/, '') || '/';
 
   /* ---- accessibility: label unlabeled fields, announce status messages ---- */
   const a11y = () => {
@@ -18,13 +18,13 @@
   a11y(); window.addEventListener('load', a11y);
 
   /* ---- global search ---- */
-  const pages = [['Overview', 'index.html'], ['My Workspace', 'workspace.html'], ['My Library', 'library.html'], ['Syllabus', 'syllabus.html'], ['Assignments', 'assignments.html'], ['Productivity', 'productivity.html'], ['Student Toolkit', 'students.html'], ['Documents', 'documents.html'], ['Image Studio', 'images.html'], ['Merge PDF', 'merge-pdf.html'], ['Recent activity', 'recent.html'], ['Settings', 'settings.html']];
+  const pages = [['Overview', '/'], ['My Workspace', 'workspace'], ['My Library', 'library'], ['Syllabus', 'syllabus'], ['Assignments', 'assignments'], ['Productivity', 'productivity'], ['Student Toolkit', 'students'], ['Documents', 'documents'], ['Image Studio', 'images'], ['Merge PDF', 'merge-pdf'], ['Recent activity', 'recent'], ['Settings', 'settings']];
   const buildIndex = () => [
     ...pages.map(([t, u]) => ({ k: 'Page', t, s: '', u })),
-    ...get('savedNotes', []).map(n => ({ k: 'Note', t: n.title, s: (n.tags || []).map(x => '#' + x).join(' ') + ' ' + plain(n.html).slice(0, 80), u: 'productivity.html', note: n.id })),
-    ...get('todos', []).map(x => ({ k: 'Task', t: x.text, s: x.done ? 'Done' : 'Pending', u: 'productivity.html' })),
-    ...get('library', []).map(x => ({ k: 'Library', t: x.title, s: [x.type, x.subject, x.tags].filter(Boolean).join(' · '), u: 'library.html' })),
-    ...get('assignments', []).map(x => ({ k: 'Assignment', t: x.title, s: [x.subject, x.due].filter(Boolean).join(' · '), u: 'assignments.html' }))
+    ...get('savedNotes', []).map(n => ({ k: 'Note', t: n.title, s: (n.tags || []).map(x => '#' + x).join(' ') + ' ' + plain(n.html).slice(0, 80), u: 'productivity', note: n.id })),
+    ...get('todos', []).map(x => ({ k: 'Task', t: x.text, s: x.done ? 'Done' : 'Pending', u: 'productivity' })),
+    ...get('library', []).map(x => ({ k: 'Library', t: x.title, s: [x.type, x.subject, x.tags].filter(Boolean).join(' · '), u: 'library' })),
+    ...get('assignments', []).map(x => ({ k: 'Assignment', t: x.title, s: [x.subject, x.due].filter(Boolean).join(' · '), u: 'assignments' }))
   ];
   const box = document.createElement('div');
   box.className = 'dh-search'; box.hidden = true;
@@ -64,7 +64,7 @@
     else if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); open(); }
     else if (e.altKey && e.key.toLowerCase() === 'n') {
       e.preventDefault();
-      if (here === 'productivity.html') $('newNoteBtn')?.click(); else location.href = 'productivity.html#new-note';
+      if (here === 'productivity') $('newNoteBtn')?.click(); else location.href = 'productivity#new-note';
     }
   });
   const top = document.querySelector('.topbar-tools') || document.querySelector('.topbar');
